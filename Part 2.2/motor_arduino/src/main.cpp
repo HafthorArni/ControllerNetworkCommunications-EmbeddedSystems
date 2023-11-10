@@ -6,6 +6,7 @@
 #include "timer_msec.h"
 #include "analog_out.h"
 #include "PI_controller.h"
+
 // #include "P_controller.h"
 
 
@@ -30,7 +31,7 @@ double u = 0;
 
 int main(){  
     init();// Initialize Arduino framework
-    Serial.begin(9600, SERIAL_8N1);  
+    Serial.begin(115200, SERIAL_8N1);  
     timer.init(0.1); // ms
     sei();  // enable interrupts
 
