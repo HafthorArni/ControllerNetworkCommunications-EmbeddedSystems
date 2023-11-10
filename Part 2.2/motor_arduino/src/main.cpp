@@ -41,28 +41,31 @@ int main(){
     motorIN2.set_lo();
     
     while(1){
-        const size_t MSG_LEN = 2;
+        const size_t MSG_LEN = 8;
         uint8_t msg[MSG_LEN];
-        char buffer[100]; 
+        char buffer[8]; 
         // ref = (analogRead(analogPin)/1023.0)*120;
         Serial.readBytes(msg, MSG_LEN);
         // if (millis() - lastPrintTime >= 250) { 
-        if(msg[0] == 0x01){   // begins with "01"?
-          int ref = msg[1];       // extract the int
-          if(ref>=0 && ref<=255){          // is it in range?
-            actual = abs(encoder.speed());
-            u = controller.update(ref, actual);
-            u = constrain(u, 0.0, 0.999); // Ensure pwmValue is within [0, 1]
-            pwmValue = u;
-            motorIN1.set(pwmValue);
-            sprintf(buffer, "MO :PWM succesfully set to %d\n", ref);
-          }
-          else{                                // no, error message back
-              sprintf(buffer, "MO :Error: %d is out of range\n", ref);
-          } 
-        }
-        else{ sprintf(buffer, "MO :Unknown command: %0x", msg[0]); }
-        Serial.print(buffer);                 // send the buffer to the RPi
+        if(msg[0] == 0x01){   // checking if this command is for this arduino?
+            if (msg[1] == 0x03){    //am I reading?
+                
+            }
+            if (msg[1] == 0x06){    //am I writing?
+                uint16_t reg = (msg[2]<<8|msg[3]);
+                if (reg == 0x00){   //am I writing on the motor?
+                    uint16_t ref = (msg[4]<<8|msg[5]);
+                    if(ref>=0 && ref<=255){          // is it in range?
+                        actual = abs(encoder.speed());
+                        u = controller.update(ref, actual);
+                        u = constrain(u, 0.0, 0.999); // Ensure pwmValue is within [0, 1]
+                        pwmValue = u;
+                        motorIN1.set(pwmValue);
+                        Serial.println(msg);        //success, sending the message back to the rpi 
+                    } 
+                }
+            }
+        }                 // send the buffer to the RPi
           // Serial.print("speed: (");
           // Serial.print("Ref: ");
           // Serial.print(ref);
