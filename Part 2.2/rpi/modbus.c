@@ -11,9 +11,12 @@
 #include <stdint.h>
 // Compute the MODBUS RTU CRC
 uint16_t ModRTU_CRC(uint8_t buf[], int len);
+uint8_t make_msg(uint8_t ID, uint8_t func, uint16_t reg, uint16_t data);
 
 int main(int argc, char *argv[]){
    int file, count;
+   uint16_t sens_val;
+   uint16_t rpm;
    if(argc!=5){
        printf("Invalid number of arguments, exiting!\n");
        return -2;
@@ -35,16 +38,8 @@ int main(int argc, char *argv[]){
    tcsetattr(file, TCSANOW, &options);
    // send the string plus the null character
    const size_t MSG_LEN = 8;
-   uint8_t msg[MSG_LEN];
-   msg[0] = atoi(argv[1]);
-   msg[1] = atoi(argv[2]);      //func
-    msg[2] = atoi(argv[3])>> 8;
-    msg[3] = atoi(argv[3])&0x00FF;
-    msg[4] = atoi(argv[4])>> 8;
-    msg[5] = atoi(argv[4])&0x00FF;
-   uint16_t crc = ModRTU_CRC(msg, MSG_LEN-2);
-   msg[6] = (uint8_t)(crc >> 8);
-   msg[7] = (uint8_t)(crc & 0x00FF);
+   uint8_t msg[MSG_LEN] = make_msg(argv[1], argv[2], argv[3], argv[4]);
+
    if ((count = write(file, msg, MSG_LEN))<0){
       perror("Failed to write to the output\n");
       return -1;
@@ -68,12 +63,18 @@ int main(int argc, char *argv[]){
    if (count==0) printf("There was no data available to read!\n");
    else {
       receive[count]=0;  //There is no null character sent by the Arduino
-      printf("The following was read in [%d]: %s\n",count,receive);
+      if (receive[0] == 0x01){
+
+      }
+      if (receive[0] == 0x02){
+        sens_val = (receive[4]<<8)|(receive[5]);
+      }
    }
 
    close(file);
    return 0;
 }
+
 uint16_t ModRTU_CRC(uint8_t buf[], int len)
 {
     uint16_t crc = 0xFFFF;
@@ -91,4 +92,19 @@ uint16_t ModRTU_CRC(uint8_t buf[], int len)
     }
     // Note, this number has low and high bytes swapped, so use it accordingly (or swap bytes)
     return crc;
+}
+
+uint8_t make_msg(uint8_t ID, uint8_t func, uint16_t reg, uint16_t data){
+    const size_t MSG_LEN = 8;
+    uint8_t msg[MSG_LEN];
+    msg[0] = ID;
+    msg[1] = func;      //func
+    msg[2] = reg >> 8;
+    msg[3] = reg & 0x00FF;
+    msg[4] = data >> 8;
+    msg[5] = data & 0x00FF;
+    uint16_t crc = ModRTU_CRC(msg, MSG_LEN-2);
+    msg[6] = (uint8_t)(crc >> 8);
+    msg[7] = (uint8_t)(crc & 0x00FF);
+    return msg;
 }
