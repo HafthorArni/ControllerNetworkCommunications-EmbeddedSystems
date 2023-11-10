@@ -18,8 +18,8 @@ void loop(){
   char buffer[100];       // stores the return buffer on each loop 
   applyExponentialSmoothing(sensorPin);
   if (Serial.available()>0){                 // bytes received
-      // command = Serial.readStringUntil('\0'); // C strings end with \0
-      // if(command.substring(0,4) == "LED "){   // begins with "LED "?
+      command = Serial.readStringUntil('\0'); // C strings end with \0
+      if(command.substring(0,2) == "SE"){   // begins with "LED "?
       //    String intString = command.substring(4, command.length());
       //    int level = intString.toInt();       // extract the int
       //    if(level>=0 && level<=255){          // is it in range?
@@ -35,5 +35,7 @@ void loop(){
       Serial.print(buffer);               // send the buffer to the RPi
    }
   // Serial.println((int)smoothedValue);
-  delay(0.1);
+  Serial.print((int)smoothedValue); 
+  delay(10);
+}
 }

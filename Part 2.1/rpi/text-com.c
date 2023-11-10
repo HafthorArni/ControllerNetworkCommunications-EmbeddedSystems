@@ -1,6 +1,3 @@
-/* Simple send and receive C example (line-mode terminal program with local echo) 
-* for communicating with the Arduino using /dev/ttyS0. */
-
 #include<stdio.h>
 #include<fcntl.h>
 #include<unistd.h>
@@ -24,7 +21,7 @@ int main(int argc, char *argv[]){
 
    tcgetattr(file, &options);
 
-   options.c_cflag = B115200 | CS8 | CREAD | CLOCAL;
+   options.c_cflag = B9600 | CS8 | CREAD | CLOCAL;
    options.c_iflag = IGNPAR | ICRNL;
    tcflush(file, TCIFLUSH);
    tcsetattr(file, TCSANOW, &options);
@@ -45,15 +42,17 @@ int main(int argc, char *argv[]){
    }
 
    if (count==0) printf("There was no data available to read!\n");
-   if (receive.substring(0,2) == 'SE') {
-      receive[count]=0;  //There is no null character sent by the Arduino
-      printf("The following was read from the sensor in [%d]: %s\n",count,receive);
+   else {
+       receive[count]=0;  //There is no null character sent by the Arduino
+
+       if (strncmp((char *)receive, "SE", 2) == 0) {
+           printf("The following was read from the sensor in [%d]: %s\n", count, receive);
+       } else if (strncmp((char *)receive, "MO", 2) == 0) {
+           printf("The following was read from the motor in [%d]: %s\n", count, receive);
+       } else {
+           printf("Source of message unknown!\n");
+       }
    }
-   if (receive.substring(0,2) == 'MO') {
-      receive[count]=0;  //There is no null character sent by the Arduino
-      printf("The following was read from the motor in [%d]: %s\n",count,receive);
-   }
-   else {printf("Source of message unknown!\n")}
 
    close(file);
    return 0;
