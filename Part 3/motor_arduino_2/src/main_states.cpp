@@ -37,6 +37,7 @@ int main(){
     Serial.begin(115200, SERIAL_8N1);    
     _delay_ms(1000);
     context = new Context(new Initialization);
+    stateVars.ref = 60;
     
     //context->timeout(); //Gera þetta ef að fault kemur
     sei();  // enable interrupts
@@ -66,7 +67,6 @@ int main(){
                             uint8_t myCRC2 = (uint8_t)(myCRC & 0x00FF);
                             if (msg[6] == myCRC1 && msg[7] == myCRC2){
                                 Serial.write(msg,8);        //success, sending the message back to the rpi 
-                                context->command_go(); 
                             }
                         } 
                     } else if (reg == 0x01) { // Viljum breyta um states

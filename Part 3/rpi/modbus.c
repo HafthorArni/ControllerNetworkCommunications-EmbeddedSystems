@@ -90,40 +90,41 @@ int main(int argc, char *argv[]){
    }
 
     usleep(1000000);
+    
 
-   if ((count = read(file, (void*)receive, 20))<0){
-      perror("Failed to read from the input\n");
-      return -1;
-   }
+//    if ((count = read(file, (void*)receive, 20))<0){
+//       perror("Failed to read from the input\n");
+//       return -1;
+//    }
 
-   if (count==0) printf("There was no data available to read!\n");
-   else {
-        printf("Received request:\t");
-        for (int i = 0; i < MSG_LEN; i++) {
-            if (receive[i] < 16) printf("0");
-            printf("%x ",receive[i]);
-        }
-        printf("\n");
+//    if (count==0) printf("There was no data available to read!\n");
+//    else {
+//         printf("Received request:\t");
+//         for (int i = 0; i < MSG_LEN; i++) {
+//             if (receive[i] < 16) printf("0");
+//             printf("%x ",receive[i]);
+//         }
+//         printf("\n");
 
-        if (receive[0] == 0x01){
+//         if (receive[0] == 0x01){
 
-        }
-        if (receive[0] == 0x02){
-            sens_val = (receive[4]<<8)|(receive[5]);
-            rpm = sens_val*120/1023;
-            make_msg(1, 6, 0, rpm, msg);
-            if ((count = write(file, msg, MSG_LEN))<0){
-                perror("Failed to write to the motor\n");
-                return -1;
-            }
-            printf("Sent request:\t");
-            for (int i = 0; i < MSG_LEN; i++) {
-                if (msg[i] < 16) printf("0");
-                printf("%x ",msg[i]);
-            }
-            printf("\n");
-      }
-   }
+//         }
+//         if (receive[0] == 0x02){
+//             sens_val = (receive[4]<<8)|(receive[5]);
+//             rpm = sens_val*120/1023;
+//             make_msg(1, 6, 0, rpm, msg);
+//             if ((count = write(file, msg, MSG_LEN))<0){
+//                 perror("Failed to write to the motor\n");
+//                 return -1;
+//             }
+//             printf("Sent request:\t");
+//             for (int i = 0; i < MSG_LEN; i++) {
+//                 if (msg[i] < 16) printf("0");
+//                 printf("%x ",msg[i]);
+//             }
+//             printf("\n");
+//       }
+//    }
 
    close(file);
    return 0;

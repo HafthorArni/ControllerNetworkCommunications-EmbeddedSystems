@@ -44,21 +44,24 @@ void loop(){
       // uint8_t testdata[] = {0x00, 0x00};   // checking if this command is for this arduino?
       // Serial.write(testdata,2);
         if (msg[1] == 0x03){    //am I reading?
-            uint16_t reg = (msg[2]<<8|msg[3]);
             if (msg[3] == 0){   //am I reading from the sensor?
-                uint16_t ref = (msg[4]<<8|msg[5]);
-                if(msg[5] == 1){          // rpi only asked for one value?
-                  data = (uint16_t)(smoothedValue);
-                  msg[4] = (uint8_t)(data >> 8);
-                  msg[5] = (uint8_t)(data & 0x00FF);
+              _delay_ms(100);
+              if(msg[5] == 1){          // rpi only asked for one value?
                   uint16_t myCRC = ModRTU_CRC(msg, 6);
                   uint8_t myCRC1 = (uint8_t)(myCRC >> 8);
                   uint8_t myCRC2 = (uint8_t)(myCRC & 0x00FF);
-                  Serial.write(msg,8); 
-                  // if (msg[6] == myCRC1 && msg[7] == myCRC2){
-                  //     Serial.write(msg,8);       //success, sending the message back to the rpi 
-                  // }
-                } 
+                if (msg[6] == myCRC1 && msg[7] == myCRC2){
+                  data = (uint16_t)(smoothedValue);
+                  msg[4] = (uint8_t)(data >> 8);
+                  msg[5] = (uint8_t)(data & 0x00FF);
+                  myCRC = ModRTU_CRC(msg, 6);
+                  myCRC1 = (uint8_t)(myCRC >> 8);
+                  myCRC2 = (uint8_t)(myCRC & 0x00FF);
+                  msg[6] = myCRC1;
+                  msg[7] = myCRC2; 
+                  Serial.write(msg,8);       //success, sending the message back to the rpi 
+                }
+              } 
             }    
         }
         if (msg[1] == 0x06){    //am I writing?
