@@ -12,6 +12,25 @@
 StateVariables stateVars;
 Context *context;
 
+uint16_t ModRTU_CRC(uint8_t buf[], int len)
+{
+    uint16_t crc = 0xFFFF;
+    for (int pos = 0; pos < len; pos++) {
+        crc ^= (uint16_t)buf[pos]; // XOR byte into least sig. byte of crc
+        for (int i = 8; i != 0; i--) { // Loop over each bit
+            if ((crc & 0x0001) != 0) { // If the LSB is set
+                crc >>= 1; // Shift right and XOR 0xA001
+                crc ^= 0xA001;
+            }
+            else {// Else LSB is not set
+                crc >>= 1; // Just shift right
+            }
+        }
+    }
+    // Note, this number has low and high bytes swapped, so use it accordingly (or swap bytes)
+    return crc;
+}
+
 int main(){  
 
     init();// Initialize Arduino framework
@@ -30,9 +49,9 @@ int main(){
         if (Serial.available()) {
             const size_t MSG_LEN = 8;
             uint8_t msg[MSG_LEN];
-            char buffer[8]; 
             Serial.readBytes(msg, MSG_LEN);
             if(msg[0] == 0x01){   // checking if this command is for this arduino?
+                _delay_ms(100);
                 if (msg[1] == 0x03){    //am I reading?
                     
                 }
@@ -42,8 +61,13 @@ int main(){
                         uint16_t ref = (msg[4]<<8|msg[5]);
                         if(ref>=0 && ref<=255){          // is it in range?
                             stateVars.ref = ref;
-                            Serial.println(msg);        //success, sending the message back to the rpi 
-                            context->command_go(); 
+                            uint16_t myCRC = ModRTU_CRC(msg, 6);
+                            uint8_t myCRC1 = (uint8_t)(myCRC >> 8);
+                            uint8_t myCRC2 = (uint8_t)(myCRC & 0x00FF);
+                            if (msg[6] == myCRC1 && msg[7] == myCRC2){
+                                Serial.write(msg,8);        //success, sending the message back to the rpi 
+                                context->command_go(); 
+                            }
                         } 
                     }
                 }
