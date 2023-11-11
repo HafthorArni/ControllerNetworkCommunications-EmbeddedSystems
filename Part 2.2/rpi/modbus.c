@@ -1,6 +1,3 @@
-/* Simple send and receive C example (line-mode terminal program with local echo) 
-* for communicating with the Arduino using /dev/ttyS0. */
-
 #include<stdio.h>
 #include<fcntl.h>
 #include<unistd.h>
@@ -8,10 +5,11 @@
 #include<string.h>
 #include<stdint.h>
 #include<stdlib.h>
-#include <stdint.h>
 // Compute the MODBUS RTU CRC
 uint16_t ModRTU_CRC(uint8_t buf[], int len);
-uint8_t make_msg(uint8_t ID, uint8_t func, uint16_t reg, uint16_t data);
+void make_msg(uint8_t ID, uint8_t func, uint16_t reg, uint16_t data, uint8_t* msg);
+#define MSG_LEN 8
+uint8_t msg[MSG_LEN];
 
 int main(int argc, char *argv[]){
    int file, count;
@@ -33,12 +31,13 @@ int main(int argc, char *argv[]){
 
    options.c_cflag = B115200 | CS8 | CREAD | CLOCAL;
    options.c_iflag = IGNPAR | ICRNL;
+   //options.c_lflag &= ~(ICANON | ISIG);
+   //options.c_oflag &= ~OPOST;
    tcflush(file, TCIFLUSH);
    cfmakeraw(&options);
    tcsetattr(file, TCSANOW, &options);
-   // send the string plus the null character
-   const size_t MSG_LEN = 8;
-   uint8_t msg[MSG_LEN] = make_msg(argv[1], argv[2], argv[3], argv[4]);
+
+   make_msg(atoi(argv[1]), atoi(argv[2]), atoi(argv[3]), atoi(argv[4]), msg);
 
    if ((count = write(file, msg, MSG_LEN))<0){
       perror("Failed to write to the output\n");
@@ -50,24 +49,79 @@ int main(int argc, char *argv[]){
         if (msg[i] < 16) printf("0");
         printf("%x ",msg[i]);
     }
+    printf("\n");
 
-   usleep(100000);
+   usleep(1000000);
 
-   unsigned char receive[100];
+   unsigned char receive[20];
 
-   if ((count = read(file, (void*)receive, 100))<0){
+   if ((count = read(file, (void*)receive, 20))<0){
       perror("Failed to read from the input\n");
       return -1;
    }
 
    if (count==0) printf("There was no data available to read!\n");
    else {
-      receive[count]=0;  //There is no null character sent by the Arduino
-      if (receive[0] == 0x01){
+        printf("Received request:\t");
+        for (int i = 0; i < MSG_LEN; i++) {
+            if (receive[i] < 16) printf("0");
+            printf("%x ",receive[i]);
+        }
+        printf("\n");
 
+        if (receive[0] == 0x01){
+
+        }
+        if (receive[0] == 0x02){
+            sens_val = (receive[4]<<8)|(receive[5]);
+            rpm = sens_val*120/1023;
+            make_msg(1, 6, 0, rpm, msg);
+            if ((count = write(file, msg, MSG_LEN))<0){
+                perror("Failed to write to the motor\n");
+                return -1;
+            }
+            printf("Sent request:\t");
+            for (int i = 0; i < MSG_LEN; i++) {
+                if (msg[i] < 16) printf("0");
+                printf("%x ",msg[i]);
+            }
+            printf("\n");
       }
-      if (receive[0] == 0x02){
-        sens_val = (receive[4]<<8)|(receive[5]);
+   }
+
+    usleep(1000000);
+
+   if ((count = read(file, (void*)receive, 20))<0){
+      perror("Failed to read from the input\n");
+      return -1;
+   }
+
+   if (count==0) printf("There was no data available to read!\n");
+   else {
+        printf("Received request:\t");
+        for (int i = 0; i < MSG_LEN; i++) {
+            if (receive[i] < 16) printf("0");
+            printf("%x ",receive[i]);
+        }
+        printf("\n");
+
+        if (receive[0] == 0x01){
+
+        }
+        if (receive[0] == 0x02){
+            sens_val = (receive[4]<<8)|(receive[5]);
+            rpm = sens_val*120/1023;
+            make_msg(1, 6, 0, rpm, msg);
+            if ((count = write(file, msg, MSG_LEN))<0){
+                perror("Failed to write to the motor\n");
+                return -1;
+            }
+            printf("Sent request:\t");
+            for (int i = 0; i < MSG_LEN; i++) {
+                if (msg[i] < 16) printf("0");
+                printf("%x ",msg[i]);
+            }
+            printf("\n");
       }
    }
 
@@ -94,9 +148,7 @@ uint16_t ModRTU_CRC(uint8_t buf[], int len)
     return crc;
 }
 
-uint8_t make_msg(uint8_t ID, uint8_t func, uint16_t reg, uint16_t data){
-    const size_t MSG_LEN = 8;
-    uint8_t msg[MSG_LEN];
+void make_msg(uint8_t ID, uint8_t func, uint16_t reg, uint16_t data, uint8_t* msg){
     msg[0] = ID;
     msg[1] = func;      //func
     msg[2] = reg >> 8;
@@ -106,5 +158,4 @@ uint8_t make_msg(uint8_t ID, uint8_t func, uint16_t reg, uint16_t data){
     uint16_t crc = ModRTU_CRC(msg, MSG_LEN-2);
     msg[6] = (uint8_t)(crc >> 8);
     msg[7] = (uint8_t)(crc & 0x00FF);
-    return msg;
 }
