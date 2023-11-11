@@ -69,39 +69,6 @@ int main(){
                                 context->command_go(); 
                             }
                         } 
-                    } else if (reg == 0x01) { // Viljum breyta um states
-                        uint16_t ref = (msg[4]<<8|msg[5]);
-                        if(((ref == 0x01) || (ref == 0x02) || (ref == 0x80) || (ref == 0x81)) || ref == 0x82){          // is it in range?
-                            if (ref == 0x01) {  // 01
-                                if (stateVars.flt == true) {
-                                    stateVars.c = 'c';
-                                    stateVars.pre = false;
-                                } else {
-                                    stateVars.c = 'o';
-                                }
-                            }
-                            if (ref == 0x02) {
-                                stateVars.flt = true; // 02
-                            }
-
-                            if (ref == 0x80) {// 80
-                                if (stateVars.flt == true) {
-                                    stateVars.c = 'c'; 
-                                    stateVars.pre = true;
-                                } else {
-                                    stateVars.c = 'p'; 
-                                }
-                            } 
-                            if (ref == 0x81) stateVars.c = 'r'; // 81
-                            if (ref == 0x82) stateVars.c = 'r'; // 82 skoða betur
-                            uint16_t myCRC = ModRTU_CRC(msg, 6);
-                            uint8_t myCRC1 = (uint8_t)(myCRC >> 8);
-                            uint8_t myCRC2 = (uint8_t)(myCRC & 0x00FF);
-                            if (msg[6] == myCRC1 && msg[7] == myCRC2){
-                                Serial.write(msg,8);        //success, sending the message back to the rpi 
-                                context->command_go(); 
-                            }
-                        } 
                     }
                 }
             } 
